@@ -1,36 +1,81 @@
-// server.cpp
-
 #include <iostream>
+#include <string>
+#include <thread>
+#include <vector>
+#include <mutex>
+#include <algorithm>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
+
+// List of all connected clients
+std::vector<SOCKET> clients;
+
+// Mutex prevents two threads from modifying
+// the same data at the same time
+// Without it, two threads could write to 'clients' simultaneously
+// and corrupt the data
+std::mutex clientsMutex;
+
+// FUNCTION : Handle one client in its own thread
+// Runs separately for each connected client
+
+void handleClient(SOCKET clientSocket) {
+    char buffer[1024];
+
+    while (true) {
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+
+        if (bytesReceived <= 0) {
+            std::cout << "A client has disconnected\n";
+
+            // Remove this client from the list
+            // We lock the mutex before modifying the list
+            std::lock_guard<std::mutex> lock(clientsMutex);
+            clients.erase(std::remove(clients.begin(), clients.end(), clientSocket), clients.end());
+
+            closesocket(clientSocket);
+            break;
+        }
+
+        buffer[bytesReceived] = '\0';
+        std::string message(buffer);
+        std::cout << "Message received: " << message << "\n";
+
+        // ── BROADCAST ──
+        // Send the message to ALL connected clients
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        for (SOCKET& s : clients) {
+            // Don't send the message back to the sender
+            if (s != clientSocket) {
+                send(s, message.c_str(), message.size(), 0);
+            }
+        }
+    }
+}
+
+
 int main() {
 
-    // STEP 1 : Initialize Winsock
+    //Initialize Winsock
     WSADATA wsaData;
-
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "Error: WSAStartup failed\n";
         return 1;
     }
     std::cout << "Winsock initialized successfully\n";
 
-    // STEP 2 : Create the server socket
-
+    //Create the server socket
     SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
     if (serverSocket == INVALID_SOCKET) {
         std::cerr << "Error: Failed to create socket\n";
         WSACleanup();
         return 1;
     }
-    std::cout << "Server socket created\n";
 
-
-    // STEP 3 : Bind the socket to an address and port
-
+    //Bind
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(54000);
@@ -42,56 +87,46 @@ int main() {
         WSACleanup();
         return 1;
     }
-    std::cout << "Socket bound to port 54000\n";
 
-
-    // STEP 4 : Listen for incoming connections
-
-    if (listen(serverSocket, 1) == SOCKET_ERROR) {
+    //Listen
+    if (listen(serverSocket, 10) == SOCKET_ERROR) {
         std::cerr << "Error: Listen failed\n";
         closesocket(serverSocket);
         WSACleanup();
         return 1;
     }
-    std::cout << "Server is listening... Waiting for a client\n";
+    std::cout << "Server is listening on port 54000...\n";
 
-
-    // STEP 5 : Accept an incoming connection
-
-    sockaddr_in clientAddr;
-    int clientSize = sizeof(clientAddr);
-
-    SOCKET clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientSize);
-
-    if (clientSocket == INVALID_SOCKET) {
-        std::cerr << "Error: Accept failed\n";
-        closesocket(serverSocket);
-        WSACleanup();
-        return 1;
-    }
-    std::cout << "A client has connected!\n";
-
-
-    // STEP 6 : Receive messages from the client
-
-    char buffer[1024];
-
+    // STEP 5 : Accept clients in a loop — this is the key change
+    // Before we accepted only ONE client, now we loop forever
+    // and accept as many clients as possible
     while (true) {
-        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+        sockaddr_in clientAddr;
+        int clientSize = sizeof(clientAddr);
 
-        if (bytesReceived <= 0) {
-            std::cout << "Client disconnected\n";
-            break;
+        SOCKET clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientSize);
+
+        if (clientSocket == INVALID_SOCKET) {
+            std::cerr << "Error: Accept failed\n";
+            continue;
         }
 
-        buffer[bytesReceived] = '\0';
-        std::cout << "Message received: " << buffer << "\n";
-    }
+        std::cout << "A new client has connected!\n";
 
+        // Add this client to the global list
+        {
+            std::lock_guard<std::mutex> lock(clientsMutex);
+            clients.push_back(clientSocket);
+        }
+
+        // Create a new thread for this client
+        // The thread will run handleClient() independently
+        std::thread t(handleClient, clientSocket);
+        t.detach(); // detach = the thread runs on its own, we don't wait for it
+    }
 
     // CLEANUP
 
-    closesocket(clientSocket);
     closesocket(serverSocket);
     WSACleanup();
 
