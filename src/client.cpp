@@ -25,16 +25,14 @@ void receiveMessages(SOCKET clientSocket) {
         buffer[bytesReceived] = '\0';
 
         // Clear the current line (the "> " prompt)
-        // \r goes back to the beginning of the line
+        // with \r we go back to the beginning of the line
         // then we overwrite with spaces to erase it
         std::cout << "\r                                    \r";
 
-        // Print the received message
-        std::cout << "[Other user]: " << buffer << "\n";
-
-        // Reprint the prompt so the user knows they can still type
+        // Print the message as-is — the server already formats it as "[Alice]: Hello"
+        std::cout << buffer << "\n";
         std::cout << "> " << std::flush;
-    }
+        }
 }
 
 int main() {
