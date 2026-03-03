@@ -168,7 +168,7 @@ int main() {
         // Add this client to the global list
         {
             std::lock_guard<std::mutex> lock(clientsMutex);
-            clients.push_back(clientSocket);
+            clients.push_back({clientSocket, ""});
         }
 
         // Create a new thread for this client
