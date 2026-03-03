@@ -69,6 +69,13 @@ void handleClient(SOCKET clientSocket) {
         }
     }
 
+    // Announce to everyone that this user joined
+    broadcast("*** " + username + " has joined the chat ***", clientSocket);
+
+    // Send a welcome message to the new user
+    std::string welcome = "Welcome " + username + "! You are now connected.\n";
+    send(clientSocket, welcome.c_str(), welcome.size(), 0);
+
     std::cout << username << " has joined the chat\n";
 
     // ── STEP 2 : Listen for messages ──
@@ -85,6 +92,9 @@ void handleClient(SOCKET clientSocket) {
                     [clientSocket](const Client& c) { return c.socket == clientSocket; }),
                 clients.end()
             );
+
+            // Announce disconnection to everyone
+            broadcast("*** " + username + " has left the chat ***", clientSocket);
 
             closesocket(clientSocket);
             break;
