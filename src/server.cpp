@@ -10,8 +10,14 @@
 #pragma comment(lib, "ws2_32.lib")
 
 
-// List of all connected clients
-std::vector<SOCKET> clients;
+// Instead of storing just a socket, we now store
+// both the socket and the username of each client
+struct Client {
+    SOCKET socket;
+    std::string username;
+};
+
+std::vector<Client> clients;
 
 // Mutex prevents two threads from modifying
 // the same data at the same time
