@@ -80,6 +80,9 @@ int main() {
 
         if (message == "quit") {
             running = false;
+            // Notify the server before disconnecting
+            std::string bye = "/quit";
+            send(clientSocket, bye.c_str(), bye.size(), 0);
             std::cout << "Disconnecting...\n";
             break;
         }
