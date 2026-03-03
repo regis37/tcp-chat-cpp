@@ -1,5 +1,3 @@
-// client.cpp
-
 #include <iostream>
 #include <string>
 #include <thread>
@@ -69,8 +67,6 @@ int main() {
         return 1;
     }
 
-    std::cout << "Connected to server!\n";
-    std::cout << "Type your messages below (type 'quit' to exit):\n\n";
 
     // STEP 4 : Start receiver thread
     std::thread receiver(receiveMessages, clientSocket);
