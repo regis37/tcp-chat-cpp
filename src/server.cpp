@@ -25,6 +25,17 @@ std::vector<Client> clients;
 // and corrupt the data
 std::mutex clientsMutex;
 
+
+// BROADCAST a message to all clients except the sender
+void broadcast(const std::string& message, SOCKET senderSocket) {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    for (Client& c : clients) {
+        if (c.socket != senderSocket) {
+            send(c.socket, message.c_str(), message.size(), 0);
+        }
+    }
+}
+
 // FUNCTION : Handle one client in its own thread
 // Runs separately for each connected client
 
