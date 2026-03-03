@@ -42,34 +42,59 @@ void broadcast(const std::string& message, SOCKET senderSocket) {
 void handleClient(SOCKET clientSocket) {
     char buffer[1024];
 
+    // ── STEP 1 : Ask for username ──
+    std::string prompt = "Enter your username: ";
+    send(clientSocket, prompt.c_str(), prompt.size(), 0);
+
+    int bytes = recv(clientSocket, buffer, sizeof(buffer), 0);
+    if (bytes <= 0) {
+        closesocket(clientSocket);
+        return;
+    }
+    buffer[bytes] = '\0';
+    std::string username(buffer);
+
+    // Remove trailing newline or carriage return
+    while (!username.empty() && (username.back() == '\n' || username.back() == '\r'))
+        username.pop_back();
+
+    // Save the username in the clients list
+    {
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        for (Client& c : clients) {
+            if (c.socket == clientSocket) {
+                c.username = username;
+                break;
+            }
+        }
+    }
+
+    std::cout << username << " has joined the chat\n";
+
+    // ── STEP 2 : Listen for messages ──
     while (true) {
         int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
 
         if (bytesReceived <= 0) {
-            std::cout << "A client has disconnected\n";
+            std::cout << username << " has disconnected\n";
 
-            // Remove this client from the list
-            // We lock the mutex before modifying the list
+            // Remove client from list
             std::lock_guard<std::mutex> lock(clientsMutex);
-            clients.erase(std::remove(clients.begin(), clients.end(), clientSocket), clients.end());
+            clients.erase(
+                std::remove_if(clients.begin(), clients.end(),
+                    [clientSocket](const Client& c) { return c.socket == clientSocket; }),
+                clients.end()
+            );
 
             closesocket(clientSocket);
             break;
         }
 
         buffer[bytesReceived] = '\0';
-        std::string message(buffer);
-        std::cout << "Message received: " << message << "\n";
+        std::string message = "[" + username + "]: " + std::string(buffer);
+        std::cout << message << "\n";
 
-        // ── BROADCAST ──
-        // Send the message to ALL connected clients
-        std::lock_guard<std::mutex> lock(clientsMutex);
-        for (SOCKET& s : clients) {
-            // Don't send the message back to the sender
-            if (s != clientSocket) {
-                send(s, message.c_str(), message.size(), 0);
-            }
-        }
+        broadcast(message, clientSocket);
     }
 }
 
