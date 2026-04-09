@@ -36,6 +36,18 @@ void broadcast(const std::string& message, SOCKET senderSocket) {
     }
 }
 
+// ─────────────────────────────────────────
+// Returns a formatted list of all connected users
+// ─────────────────────────────────────────
+std::string getConnectedUsers() {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    std::string list = "Connected users (" + std::to_string(clients.size()) + "):\n";
+    for (Client& c : clients) {
+        list += "  - " + c.username + "\n";
+    }
+    return list;
+}
+
 // FUNCTION : Handle one client in its own thread
 // Runs separately for each connected client
 
