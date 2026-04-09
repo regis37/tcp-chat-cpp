@@ -36,6 +36,18 @@ void broadcast(const std::string& message, SOCKET senderSocket) {
     }
 }
 
+// ─────────────────────────────────────────
+// Returns a formatted list of all connected users
+// ─────────────────────────────────────────
+std::string getConnectedUsers() {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    std::string list = "Connected users (" + std::to_string(clients.size()) + "):\n";
+    for (Client& c : clients) {
+        list += "  - " + c.username + "\n";
+    }
+    return list;
+}
+
 // FUNCTION : Handle one client in its own thread
 // Runs separately for each connected client
 
@@ -101,10 +113,19 @@ void handleClient(SOCKET clientSocket) {
         }
 
         buffer[bytesReceived] = '\0';
-        std::string message = "[" + username + "]: " + std::string(buffer);
-        std::cout << message << "\n";
+        std::string message(buffer);
 
-        broadcast(message, clientSocket);
+        // Check if the client sent a command
+        if (message == "/users") {
+            // Send the user list only to the requester
+            std::string userList = getConnectedUsers();
+            send(clientSocket, userList.c_str(), userList.size(), 0);
+        } else {
+            // Normal message — prefix with username and broadcast
+            std::string formatted = "[" + username + "]: " + message;
+            std::cout << formatted << "\n";
+            broadcast(formatted, clientSocket);
+        }
     }
 }
 

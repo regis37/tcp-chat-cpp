@@ -88,7 +88,13 @@ int main() {
         }
 
         if (!message.empty()) {
+            // Send the message or command to the server
             send(clientSocket, message.c_str(), message.size(), 0);
+        
+            // If it's a command, don't reprint it as a chat message
+            if (message[0] == '/') {
+                continue;
+            }
         }
     }
 
