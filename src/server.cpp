@@ -113,10 +113,19 @@ void handleClient(SOCKET clientSocket) {
         }
 
         buffer[bytesReceived] = '\0';
-        std::string message = "[" + username + "]: " + std::string(buffer);
-        std::cout << message << "\n";
+        std::string message(buffer);
 
-        broadcast(message, clientSocket);
+        // Check if the client sent a command
+        if (message == "/users") {
+            // Send the user list only to the requester
+            std::string userList = getConnectedUsers();
+            send(clientSocket, userList.c_str(), userList.size(), 0);
+        } else {
+            // Normal message — prefix with username and broadcast
+            std::string formatted = "[" + username + "]: " + message;
+            std::cout << formatted << "\n";
+            broadcast(formatted, clientSocket);
+        }
     }
 }
 
