@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <sstream>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -128,13 +129,51 @@ void handleClient(SOCKET clientSocket) {
         buffer[bytesReceived] = '\0';
         std::string message(buffer);
 
-        // Check if the client sent a command
         if (message == "/users") {
-            // Send the user list only to the requester
             std::string userList = getConnectedUsers();
             send(clientSocket, userList.c_str(), userList.size(), 0);
+        
+        } else if (message.substr(0, 4) == "/msg") {
+            // Expected format: /msg <username> <message>
+            std::istringstream iss(message.substr(5));
+            std::string target;
+            std::string privateMessage;
+        
+            if (!(iss >> target)) {
+                // No username provided
+                std::string error = "Usage: /msg <username> <message>\n";
+                send(clientSocket, error.c_str(), error.size(), 0);
+            } else if (!(iss >> privateMessage)) {
+                // No message provided
+                std::string error = "Usage: /msg <username> <message>\n";
+                send(clientSocket, error.c_str(), error.size(), 0);
+            } else {
+                // Get the rest of the message after the username
+                std::string rest;
+                std::getline(iss, rest);
+                privateMessage += rest;
+        
+                // Find the target client
+                SOCKET targetSocket = findClientByUsername(target);
+        
+                if (targetSocket == INVALID_SOCKET) {
+                    // User not found
+                    std::string error = "Error: user \"" + target + "\" not found\n";
+                    send(clientSocket, error.c_str(), error.size(), 0);
+                } else {
+                    // Send to target
+                    std::string toTarget = "[PM from " + username + "]: " + privateMessage;
+                    send(targetSocket, toTarget.c_str(), toTarget.size(), 0);
+        
+                    // Confirm to sender
+                    std::string toSender = "[PM to " + target + "]: " + privateMessage;
+                    send(clientSocket, toSender.c_str(), toSender.size(), 0);
+        
+                    std::cout << "[PM] " << username << " -> " << target << ": " << privateMessage << "\n";
+                }
+            }
+        
         } else {
-            // Normal message — prefix with username and broadcast
             std::string formatted = "[" + username + "]: " + message;
             std::cout << formatted << "\n";
             broadcast(formatted, clientSocket);
