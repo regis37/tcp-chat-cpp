@@ -48,6 +48,19 @@ std::string getConnectedUsers() {
     return list;
 }
 
+// ─────────────────────────────────────────
+// Find a client socket by username
+// Returns INVALID_SOCKET if not found
+// ─────────────────────────────────────────
+SOCKET findClientByUsername(const std::string& username) {
+    for (Client& c : clients) {
+        if (c.username == username) {
+            return c.socket;
+        }
+    }
+    return INVALID_SOCKET;
+}
+
 // FUNCTION : Handle one client in its own thread
 // Runs separately for each connected client
 
