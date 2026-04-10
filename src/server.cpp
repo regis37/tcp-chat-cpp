@@ -111,16 +111,18 @@ void handleClient(SOCKET clientSocket) {
         if (bytesReceived <= 0) {
             std::cout << username << " has disconnected\n";
 
-            // Remove client from list
-            std::lock_guard<std::mutex> lock(clientsMutex);
-            clients.erase(
-                std::remove_if(clients.begin(), clients.end(),
-                    [clientSocket](const Client& c) { return c.socket == clientSocket; }),
-                clients.end()
-            );
-
-            // Announce disconnection to everyone
+            // Announce disconnection to everyone BEFORE removing from list
             broadcast("*** " + username + " has left the chat ***", clientSocket);
+
+            // Remove client from list
+            {
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                clients.erase(
+                    std::remove_if(clients.begin(), clients.end(),
+                        [clientSocket](const Client& c) { return c.socket == clientSocket; }),
+                    clients.end()
+                );
+            }
 
             closesocket(clientSocket);
             break;
@@ -134,7 +136,11 @@ void handleClient(SOCKET clientSocket) {
             send(clientSocket, userList.c_str(), userList.size(), 0);
         
         } else if (message.substr(0, 4) == "/msg") {
-            // Expected format: /msg <username> <message>
+            // Guard against "/msg" with nothing after it
+            if (message.size() < 6) {
+                std::string error = "Usage: /msg <username> <message>\n";
+                send(clientSocket, error.c_str(), error.size(), 0);
+            } else {
             std::istringstream iss(message.substr(5));
             std::string target;
             std::string privateMessage;
@@ -172,6 +178,7 @@ void handleClient(SOCKET clientSocket) {
                     std::cout << "[PM] " << username << " -> " << target << ": " << privateMessage << "\n";
                 }
             }
+        }// close the else of size check
         
         } else {
             std::string formatted = "[" + username + "]: " + message;
