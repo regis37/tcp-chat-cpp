@@ -93,6 +93,8 @@ int main() {
         
             // If it's a command, don't reprint it as a chat message
             if (message[0] == '/') {
+                // /msg confirmation will come back from server
+                // other commands like /users have no echo needed
                 continue;
             }
         }
