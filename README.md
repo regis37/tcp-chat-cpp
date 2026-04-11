@@ -12,8 +12,9 @@ A multi-client terminal chat application built in C++ using Winsock and POSIX-st
 - Join and leave announcements
 - Thread-safe client list using `std::mutex`
 - Graceful disconnection with `/quit` signal
-
----
+- `/users` command — list all connected users
+- `/msg <username> <message>` — private messaging between users
+- CMake build system for easy compilation
 
 ## Concepts Covered
 
@@ -44,23 +45,32 @@ tcp-chat-cpp/
 ### Requirements
 
 - Windows OS
+- CMake 3.15 or higher
 - g++ compiler (MinGW or similar)
 - Winsock2 (included with Windows SDK)
 
-### Compile
+### Build with CMake (recommended)
+
+```bash
+mkdir build
+cd build
+cmake .. -G "MinGW Makefiles"
+cmake --build .
+```
+
+Executables will be generated in `build/src/`.
+
+### Build manually (alternative)
+
 ```bash
 cd src
-
-# Compile the server
 g++ server.cpp -o server -lws2_32
-
-# Compile the client
 g++ client.cpp -o client -lws2_32
 ```
 
 ### Run
 
-Open two separate terminals.
+Open two separate terminals and navigate to `build/src/`.
 
 **Terminal 1 — Start the server:**
 ```bash
@@ -73,8 +83,6 @@ Open two separate terminals.
 ```
 
 Each client will be prompted to enter a username. Once connected, messages are broadcast to all other clients in real time.
-
----
 
 ## Example
 ```
@@ -104,10 +112,10 @@ Client 2 (JC):
 
 ## Future Improvements
 
-- Private messaging between users
-- List of connected users with `/users` command
 - Cross-platform support (Linux/macOS using POSIX sockets)
 - GUI interface using Qt
+- Message history — save chat logs to a file
+- Authentication — password protected rooms
 
 ---
 
