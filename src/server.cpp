@@ -173,9 +173,7 @@ void handleClient(SOCKET clientSocket) {
         } else if (message == "/quit") {
             std::string bye = "Goodbye " + username + "!\n";
             send(clientSocket, bye.c_str(), bye.size(), 0);
-            // Small delay to ensure the message is sent before closing
             Sleep(100);
-            closesocket(clientSocket);
             break;
         
         } else if (message.substr(0, 4) == "/msg") {
