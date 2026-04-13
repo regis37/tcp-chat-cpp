@@ -168,6 +168,11 @@ void handleClient(SOCKET clientSocket) {
         } else if (message == "/help") {
             std::string help = getHelpMessage();
             send(clientSocket, help.c_str(), help.size(), 0);
+            
+        } else if (message == "/quit") {
+            std::string bye = "Goodbye " + username + "!\n";
+            send(clientSocket, bye.c_str(), bye.size(), 0);
+            break;
         
         } else if (message.substr(0, 4) == "/msg") {
             // Guard against "/msg" with nothing after it
