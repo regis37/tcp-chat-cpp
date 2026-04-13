@@ -50,6 +50,19 @@ std::string getConnectedUsers() {
 }
 
 // ─────────────────────────────────────────
+// Returns a formatted list of available commands
+// ─────────────────────────────────────────
+std::string getHelpMessage() {
+    std::string help = "Available commands:\n";
+    help += "  /users              - List all connected users\n";
+    help += "  /msg <user> <msg>   - Send a private message to a user\n";
+    help += "  /help               - Show this help message\n";
+    help += "  /quit               - Disconnect from the server\n";
+    return help;
+}
+
+
+// ─────────────────────────────────────────
 // Find a client socket by username
 // Returns INVALID_SOCKET if not found
 // ─────────────────────────────────────────
