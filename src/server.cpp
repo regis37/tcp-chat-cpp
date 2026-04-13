@@ -174,7 +174,24 @@ void handleClient(SOCKET clientSocket) {
             std::string bye = "Goodbye " + username + "!\n";
             send(clientSocket, bye.c_str(), bye.size(), 0);
             Sleep(100);
-            break;
+        
+            std::cout << username << " has disconnected\n";
+        
+            // Announce disconnection to everyone
+            broadcast("*** " + username + " has left the chat ***", clientSocket);
+        
+            // Remove client from list
+            {
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                clients.erase(
+                    std::remove_if(clients.begin(), clients.end(),
+                        [clientSocket](const Client& c) { return c.socket == clientSocket; }),
+                    clients.end()
+                );
+            }
+        
+            closesocket(clientSocket);
+            return;
         
         } else if (message.substr(0, 4) == "/msg") {
             // Guard against "/msg" with nothing after it
