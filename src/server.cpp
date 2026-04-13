@@ -147,6 +147,10 @@ void handleClient(SOCKET clientSocket) {
         if (message == "/users") {
             std::string userList = getConnectedUsers();
             send(clientSocket, userList.c_str(), userList.size(), 0);
+
+        } else if (message == "/help") {
+            std::string help = getHelpMessage();
+            send(clientSocket, help.c_str(), help.size(), 0);
         
         } else if (message.substr(0, 4) == "/msg") {
             // Guard against "/msg" with nothing after it
