@@ -50,6 +50,19 @@ std::string getConnectedUsers() {
 }
 
 // ─────────────────────────────────────────
+// Returns a formatted list of available commands
+// ─────────────────────────────────────────
+std::string getHelpMessage() {
+    std::string help = "Available commands:\n";
+    help += "  /users              - List all connected users\n";
+    help += "  /msg <user> <msg>   - Send a private message to a user\n";
+    help += "  /help               - Show this help message\n";
+    help += "  /quit               - Disconnect from the server\n";
+    return help;
+}
+
+
+// ─────────────────────────────────────────
 // Find a client socket by username
 // Returns INVALID_SOCKET if not found
 // ─────────────────────────────────────────
@@ -83,6 +96,23 @@ void handleClient(SOCKET clientSocket) {
     // Remove trailing newline or carriage return
     while (!username.empty() && (username.back() == '\n' || username.back() == '\r'))
         username.pop_back();
+
+    // Reject usernames that start with '/'
+    // to avoid confusion with commands
+    if (username.empty() || username[0] == '/') {
+        std::string error = "Error: invalid username. Username cannot start with '/'.\n";
+        send(clientSocket, error.c_str(), error.size(), 0);
+        closesocket(clientSocket);
+
+        // Remove client from list
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        clients.erase(
+            std::remove_if(clients.begin(), clients.end(),
+                [clientSocket](const Client& c) { return c.socket == clientSocket; }),
+            clients.end()
+        );
+        return;
+    }
 
     // Save the username in the clients list
     {
@@ -134,6 +164,10 @@ void handleClient(SOCKET clientSocket) {
         if (message == "/users") {
             std::string userList = getConnectedUsers();
             send(clientSocket, userList.c_str(), userList.size(), 0);
+
+        } else if (message == "/help") {
+            std::string help = getHelpMessage();
+            send(clientSocket, help.c_str(), help.size(), 0);
         
         } else if (message.substr(0, 4) == "/msg") {
             // Guard against "/msg" with nothing after it
