@@ -97,6 +97,23 @@ void handleClient(SOCKET clientSocket) {
     while (!username.empty() && (username.back() == '\n' || username.back() == '\r'))
         username.pop_back();
 
+    // Reject usernames that start with '/'
+    // to avoid confusion with commands
+    if (username.empty() || username[0] == '/') {
+        std::string error = "Error: invalid username. Username cannot start with '/'.\n";
+        send(clientSocket, error.c_str(), error.size(), 0);
+        closesocket(clientSocket);
+
+        // Remove client from list
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        clients.erase(
+            std::remove_if(clients.begin(), clients.end(),
+                [clientSocket](const Client& c) { return c.socket == clientSocket; }),
+            clients.end()
+        );
+        return;
+    }
+
     // Save the username in the clients list
     {
         std::lock_guard<std::mutex> lock(clientsMutex);
