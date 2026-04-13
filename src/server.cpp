@@ -7,6 +7,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <sstream>
+#include <windows.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -168,10 +169,13 @@ void handleClient(SOCKET clientSocket) {
         } else if (message == "/help") {
             std::string help = getHelpMessage();
             send(clientSocket, help.c_str(), help.size(), 0);
-            
+
         } else if (message == "/quit") {
             std::string bye = "Goodbye " + username + "!\n";
             send(clientSocket, bye.c_str(), bye.size(), 0);
+            // Small delay to ensure the message is sent before closing
+            Sleep(100);
+            closesocket(clientSocket);
             break;
         
         } else if (message.substr(0, 4) == "/msg") {
