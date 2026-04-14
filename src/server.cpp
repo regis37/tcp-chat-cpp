@@ -9,6 +9,7 @@
 #include <sstream>
 #include <windows.h>
 #include <ctime>
+#include <fstream>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -37,6 +38,17 @@ std::string getTimestamp() {
     char buf[20];
     std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
     return std::string("[") + buf + "]";
+}
+
+// ─────────────────────────────────────────
+// Appends a message to the chat log file
+// ─────────────────────────────────────────
+void logMessage(const std::string& message) {
+    std::ofstream logFile("chat.log", std::ios::app);
+    if (logFile.is_open()) {
+        logFile << getTimestamp() << " " << message << "\n";
+        logFile.close();
+    }
 }
 
 // BROADCAST a message to all clients except the sender
