@@ -8,6 +8,8 @@
 #include <ws2tcpip.h>
 #include <sstream>
 #include <windows.h>
+#include <ctime>
+#include <fstream>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -27,6 +29,27 @@ std::vector<Client> clients;
 // and corrupt the data
 std::mutex clientsMutex;
 
+// ─────────────────────────────────────────
+// Returns the current date and time as a formatted string
+// Example: [2026-04-14 22:30:15]
+// ─────────────────────────────────────────
+std::string getTimestamp() {
+    std::time_t now = std::time(nullptr);
+    char buf[20];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+    return std::string("[") + buf + "]";
+}
+
+// ─────────────────────────────────────────
+// Appends a message to the chat log file
+// ─────────────────────────────────────────
+void logMessage(const std::string& message) {
+    std::ofstream logFile("chat.log", std::ios::app);
+    if (logFile.is_open()) {
+        logFile << getTimestamp() << " " << message << "\n";
+        logFile.close();
+    }
+}
 
 // BROADCAST a message to all clients except the sender
 void broadcast(const std::string& message, SOCKET senderSocket) {
@@ -134,6 +157,8 @@ void handleClient(SOCKET clientSocket) {
     send(clientSocket, welcome.c_str(), welcome.size(), 0);
 
     std::cout << username << " has joined the chat\n";
+    logMessage(username + " has joined the chat");
+
 
     // ── STEP 2 : Listen for messages ──
     while (true) {
@@ -141,6 +166,7 @@ void handleClient(SOCKET clientSocket) {
 
         if (bytesReceived <= 0) {
             std::cout << username << " has disconnected\n";
+            logMessage(username + " has left the chat");
 
             // Announce disconnection to everyone BEFORE removing from list
             broadcast("*** " + username + " has left the chat ***", clientSocket);
@@ -234,6 +260,7 @@ void handleClient(SOCKET clientSocket) {
                     send(clientSocket, toSender.c_str(), toSender.size(), 0);
         
                     std::cout << "[PM] " << username << " -> " << target << ": " << privateMessage << "\n";
+                    logMessage("[PM] " + username + " -> " + target + ": " + privateMessage);
                 }
             }
         }// close the else of size check
@@ -241,6 +268,7 @@ void handleClient(SOCKET clientSocket) {
         } else {
             std::string formatted = "[" + username + "]: " + message;
             std::cout << formatted << "\n";
+            logMessage(formatted);
             broadcast(formatted, clientSocket);
         }
     }
