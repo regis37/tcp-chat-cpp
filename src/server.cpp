@@ -8,6 +8,7 @@
 #include <ws2tcpip.h>
 #include <sstream>
 #include <windows.h>
+#include <ctime>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -27,6 +28,16 @@ std::vector<Client> clients;
 // and corrupt the data
 std::mutex clientsMutex;
 
+// ─────────────────────────────────────────
+// Returns the current date and time as a formatted string
+// Example: [2026-04-14 22:30:15]
+// ─────────────────────────────────────────
+std::string getTimestamp() {
+    std::time_t now = std::time(nullptr);
+    char buf[20];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now));
+    return std::string("[") + buf + "]";
+}
 
 // BROADCAST a message to all clients except the sender
 void broadcast(const std::string& message, SOCKET senderSocket) {
