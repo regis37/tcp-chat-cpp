@@ -44,3 +44,6 @@
 
 # CMake build directory
 build/
+
+# Chat log file
+chat.log
