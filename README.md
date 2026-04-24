@@ -1,5 +1,10 @@
 # TCP Chat Application in C++
 
+![C++](https://img.shields.io/badge/C++-17-blue.svg)
+![CMake](https://img.shields.io/badge/CMake-3.15+-green.svg)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 A multi-client terminal chat application built in C++ using Winsock and POSIX-style TCP sockets. Clients connect to a central server, choose a username, and exchange messages in real time.
 
 ---
