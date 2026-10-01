@@ -89,6 +89,7 @@ std::string getHelpMessage() {
 // ─────────────────────────────────────────
 // Find a client socket by username
 // Returns INVALID_SOCKET if not found
+// Caller must hold clientsMutex
 // ─────────────────────────────────────────
 SOCKET findClientByUsername(const std::string& username) {
     for (Client& c : clients) {
@@ -243,18 +244,24 @@ void handleClient(SOCKET clientSocket) {
                 std::getline(iss, rest);
                 privateMessage += rest;
         
-                // Find the target client
-                SOCKET targetSocket = findClientByUsername(target);
-        
-                if (targetSocket == INVALID_SOCKET) {
+                // Lock across lookup and send so the target can't disconnect in between
+                bool found;
+                {
+                    std::lock_guard<std::mutex> lock(clientsMutex);
+                    SOCKET targetSocket = findClientByUsername(target);
+                    found = targetSocket != INVALID_SOCKET;
+                    if (found) {
+                        std::string toTarget = "[PM from " + username + "]: " + privateMessage;
+                        send(targetSocket, toTarget.c_str(), toTarget.size(), 0);
+                    }
+                }
+
+                if (!found) {
                     // User not found
                     std::string error = "Error: user \"" + target + "\" not found\n";
                     send(clientSocket, error.c_str(), error.size(), 0);
                 } else {
-                    // Send to target
-                    std::string toTarget = "[PM from " + username + "]: " + privateMessage;
-                    send(targetSocket, toTarget.c_str(), toTarget.size(), 0);
-        
+
                     // Confirm to sender
                     std::string toSender = "[PM to " + target + "]: " + privateMessage;
                     send(clientSocket, toSender.c_str(), toSender.size(), 0);
