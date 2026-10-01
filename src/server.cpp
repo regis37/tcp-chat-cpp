@@ -40,10 +40,16 @@ std::string getTimestamp() {
     return std::string("[") + buf + "]";
 }
 
+// Only one thread may write to chat.log at a time,
+// otherwise two lines can land at the same offset and overwrite each other
+std::mutex logMutex;
+
 // ─────────────────────────────────────────
 // Appends a message to the chat log file
 // ─────────────────────────────────────────
 void logMessage(const std::string& message) {
+    // Also covers getTimestamp(): std::localtime returns a buffer shared by all threads
+    std::lock_guard<std::mutex> lock(logMutex);
     std::ofstream logFile("chat.log", std::ios::app);
     if (logFile.is_open()) {
         logFile << getTimestamp() << " " << message << "\n";
