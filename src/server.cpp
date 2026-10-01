@@ -110,7 +110,8 @@ void handleClient(SOCKET clientSocket) {
     std::string prompt = "Enter your username: ";
     send(clientSocket, prompt.c_str(), prompt.size(), 0);
 
-    int bytes = recv(clientSocket, buffer, sizeof(buffer), 0);
+    // Leave room for the '\0' terminator
+    int bytes = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
     if (bytes <= 0) {
         closesocket(clientSocket);
         return;
@@ -163,7 +164,7 @@ void handleClient(SOCKET clientSocket) {
 
     // ── STEP 2 : Listen for messages ──
     while (true) {
-        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 
         if (bytesReceived <= 0) {
             std::cout << username << " has disconnected\n";
