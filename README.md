@@ -73,6 +73,15 @@ g++ server.cpp -o server -lws2_32
 g++ client.cpp -o client -lws2_32
 ```
 
+### Run the tests
+
+The test suite uses [GoogleTest](https://github.com/google/googletest), downloaded automatically by CMake. Each test starts the real server and talks to it over TCP, so make sure no other server is running on port 54000.
+
+```bash
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
 ### Run
 
 Open two separate terminals and navigate to `build/src/`.
