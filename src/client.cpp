@@ -14,7 +14,8 @@ void receiveMessages(SOCKET clientSocket) {
     char buffer[1024];
 
     while (running) {
-        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer), 0);
+        // Leave room for the '\0' terminator
+        int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
 
         if (bytesReceived <= 0) {
             std::cout << "\nDisconnected from server\n";
