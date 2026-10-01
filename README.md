@@ -37,9 +37,23 @@ A multi-client terminal chat application built in C++ using Winsock and POSIX-st
 ```
 tcp-chat-cpp/
 ├── src/
-│   ├── server.cpp    # Server — accepts connections, manages clients, broadcasts messages
-│   └── client.cpp    # Client — connects to server, sends and receives messages
-├── .gitignore
+│   ├── common/                  # Shared by client and server
+│   │   ├── Config.hpp           # Port, server address, buffer size
+│   │   ├── SocketIO.hpp         # sendText / receiveText helpers
+│   │   └── WinsockSession.hpp   # Starts and stops Winsock (RAII)
+│   ├── server/
+│   │   ├── main.cpp
+│   │   ├── Server.hpp/.cpp          # Listens, accepts clients, one thread per client
+│   │   ├── ClientRegistry.hpp/.cpp  # Connected clients, guarded by a mutex
+│   │   ├── CommandHandler.hpp/.cpp  # /users, /help, /msg, /quit and chat messages
+│   │   └── Logger.hpp/.cpp          # Thread-safe chat.log writer
+│   └── client/
+│       ├── main.cpp
+│       └── ChatClient.hpp/.cpp      # Connects, receives in a thread, sends user input
+├── tests/
+│   ├── ServerBehaviorTest.cpp   # Runs the real server and drives it over TCP
+│   └── support/                 # Test client and server process helpers
+├── CMakeLists.txt
 └── README.md
 ```
 
@@ -68,9 +82,8 @@ Executables will be generated in `build/src/`.
 ### Build manually (alternative)
 
 ```bash
-cd src
-g++ server.cpp -o server -lws2_32
-g++ client.cpp -o client -lws2_32
+g++ -std=c++17 -Isrc src/server/*.cpp -o server -lws2_32 -static
+g++ -std=c++17 -Isrc src/client/*.cpp -o client -lws2_32 -static
 ```
 
 ### Run the tests
