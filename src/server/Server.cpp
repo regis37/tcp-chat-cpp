@@ -49,22 +49,16 @@ void Server::handleClient(SOCKET clientSocket) {
     std::string username;
     if (!login(clientSocket, username)) return;
 
-    while (true) {
-        std::string message;
-        if (!receiveText(clientSocket, message)) {
-            std::cout << username << " has disconnected\n";
-            logger_.log(username + " has left the chat");
-            disconnect(clientSocket, username);
-            return;
-        }
-
+    // Ends when the connection drops or the client sends /quit
+    std::string message;
+    while (receiveText(clientSocket, message)) {
         bool staying = commands_.handle(clientSocket, username, message);
-        if (!staying) {
-            std::cout << username << " has disconnected\n";
-            disconnect(clientSocket, username);
-            return;
-        }
+        if (!staying) break;
     }
+
+    std::cout << username << " has disconnected\n";
+    logger_.log(username + " has left the chat");
+    disconnect(clientSocket, username);
 }
 
 bool Server::login(SOCKET clientSocket, std::string& username) {

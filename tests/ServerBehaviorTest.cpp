@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 class ServerBehaviorTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        ASSERT_TRUE(serverPortIsFree())
+        ASSERT_EQ(listeningProcessId(kServerPort), 0u)
             << "port " << kServerPort << " is already in use, stop any running server first";
 
         auto testName = ::testing::UnitTest::GetInstance()->current_test_info()->name();
@@ -26,7 +26,7 @@ protected:
         server_ = std::make_unique<ServerProcess>(SERVER_EXE, workDir_);
 
         auto deadline = Clock::now() + 5s;
-        while (serverPortIsFree()) {
+        while (listeningProcessId(kServerPort) != server_->pid()) {
             ASSERT_TRUE(server_->isRunning()) << "server exited during startup";
             ASSERT_LT(Clock::now(), deadline) << "server did not start listening";
             std::this_thread::sleep_for(10ms);
@@ -266,4 +266,23 @@ TEST_F(ServerBehaviorTest, LogsActivityToChatLog) {
     EXPECT_TRUE(waitForLogLine("Bob has joined the chat"));
     EXPECT_TRUE(waitForLogLine("[Alice]: Hello"));
     EXPECT_TRUE(waitForLogLine("[PM] Alice -> Bob: psst"));
+}
+
+TEST_F(ServerBehaviorTest, LogsQuitToChatLog) {
+    auto alice = connectAs("Alice");
+
+    alice->send("/quit");
+    ASSERT_TRUE(alice->waitForDisconnect());
+
+    EXPECT_TRUE(waitForLogLine("Alice has left the chat"));
+}
+
+TEST_F(ServerBehaviorTest, LogsAbruptDisconnectToChatLog) {
+    auto alice = connectAs("Alice");
+    auto bob = connectAs("Bob");
+
+    bob.reset();
+    ASSERT_TRUE(alice->waitFor("*** Bob has left the chat ***"));
+
+    EXPECT_TRUE(waitForLogLine("Bob has left the chat"));
 }
