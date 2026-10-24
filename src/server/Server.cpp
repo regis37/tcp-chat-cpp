@@ -61,6 +61,7 @@ void Server::handleClient(SOCKET clientSocket) {
         bool staying = commands_.handle(clientSocket, username, message);
         if (!staying) {
             std::cout << username << " has disconnected\n";
+            logger_.log(username + " has left the chat");
             disconnect(clientSocket, username);
             return;
         }
