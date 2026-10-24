@@ -267,3 +267,22 @@ TEST_F(ServerBehaviorTest, LogsActivityToChatLog) {
     EXPECT_TRUE(waitForLogLine("[Alice]: Hello"));
     EXPECT_TRUE(waitForLogLine("[PM] Alice -> Bob: psst"));
 }
+
+TEST_F(ServerBehaviorTest, LogsQuitToChatLog) {
+    auto alice = connectAs("Alice");
+
+    alice->send("/quit");
+    ASSERT_TRUE(alice->waitForDisconnect());
+
+    EXPECT_TRUE(waitForLogLine("Alice has left the chat"));
+}
+
+TEST_F(ServerBehaviorTest, LogsAbruptDisconnectToChatLog) {
+    auto alice = connectAs("Alice");
+    auto bob = connectAs("Bob");
+
+    bob.reset();
+    ASSERT_TRUE(alice->waitFor("*** Bob has left the chat ***"));
+
+    EXPECT_TRUE(waitForLogLine("Bob has left the chat"));
+}
