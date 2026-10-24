@@ -14,7 +14,7 @@ FetchContent_MakeAvailable(googletest)
 # ─────────────────────────────────────────
 add_executable(server_behavior_tests ServerBehaviorTest.cpp)
 
-target_link_libraries(server_behavior_tests PRIVATE GTest::gtest_main ws2_32)
+target_link_libraries(server_behavior_tests PRIVATE GTest::gtest_main ws2_32 iphlpapi)
 target_compile_definitions(server_behavior_tests PRIVATE SERVER_EXE="$<TARGET_FILE:server>")
 add_dependencies(server_behavior_tests server)
 

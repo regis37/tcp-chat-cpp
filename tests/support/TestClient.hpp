@@ -25,19 +25,6 @@ inline void ensureWinsock() {
     static WinsockInit init;
 }
 
-// Binding fails as soon as a server holds the port
-inline bool serverPortIsFree() {
-    ensureWinsock();
-    SOCKET probe = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    sockaddr_in addr{};
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(kServerPort);
-    addr.sin_addr.s_addr = INADDR_ANY;
-    bool isFree = bind(probe, (sockaddr*)&addr, sizeof(addr)) == 0;
-    closesocket(probe);
-    return isFree;
-}
-
 // A raw TCP client that records everything the server sends
 class TestClient {
 public:
