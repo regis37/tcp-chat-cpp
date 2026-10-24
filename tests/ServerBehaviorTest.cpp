@@ -251,6 +251,23 @@ TEST_F(ServerBehaviorTest, DisconnectedUserIsRemovedFromUserList) {
     EXPECT_TRUE(removed);
 }
 
+TEST_F(ServerBehaviorTest, ClientLeavingBeforeUsernameIsRemovedFromUserList) {
+    {
+        TestClient ghost;
+        ASSERT_TRUE(ghost.waitFor("Enter your username: "));
+    } // disconnects here without ever sending a username
+
+    auto alice = connectAs("Alice");
+
+    bool removed = false;
+    auto deadline = Clock::now() + 2s;
+    while (!removed && Clock::now() < deadline) {
+        alice->send("/users");
+        removed = alice->waitFor("Connected users (1):", 200ms);
+    }
+    EXPECT_TRUE(removed);
+}
+
 // ── Chat log ──
 
 TEST_F(ServerBehaviorTest, LogsActivityToChatLog) {
