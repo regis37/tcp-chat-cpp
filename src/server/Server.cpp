@@ -65,6 +65,7 @@ bool Server::login(SOCKET clientSocket, std::string& username) {
     sendText(clientSocket, "Enter your username: ");
 
     if (!receiveText(clientSocket, username)) {
+        registry_.remove(clientSocket);
         closesocket(clientSocket);
         return false;
     }
