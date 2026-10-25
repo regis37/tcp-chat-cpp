@@ -21,6 +21,7 @@ private:
     void showHelp(SOCKET socket);
     void sayGoodbye(SOCKET socket, const std::string& username);
     void sendPrivateMessage(SOCKET socket, const std::string& username, const std::string& message);
+    void rejectUnknownCommand(SOCKET socket, const std::string& message);
     void broadcastChat(SOCKET socket, const std::string& username, const std::string& message);
 
     ClientRegistry& registry_;
