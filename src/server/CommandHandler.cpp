@@ -24,7 +24,7 @@ bool CommandHandler::handle(SOCKET socket, const std::string& username, const st
     } else if (message == "/quit") {
         sayGoodbye(socket, username);
         return false;
-    } else if (message.substr(0, 4) == "/msg") {
+    } else if (message == "/msg" || message.substr(0, 5) == "/msg ") {
         sendPrivateMessage(socket, username, message);
     } else if (message[0] == '/') {
         rejectUnknownCommand(socket, message);

@@ -234,6 +234,14 @@ TEST_F(ServerBehaviorTest, PrivateMessageWithoutTextShowsUsage) {
     EXPECT_TRUE(alice->waitFor("Usage: /msg <username> <message>\n"));
 }
 
+TEST_F(ServerBehaviorTest, CommandStartingWithMsgIsNotPrivateMessage) {
+    auto alice = connectAs("Alice");
+
+    alice->send("/msgfoo bar");
+
+    EXPECT_TRUE(alice->waitFor("Unknown command: /msgfoo."));
+}
+
 // ── Leaving ──
 
 TEST_F(ServerBehaviorTest, QuitSaysGoodbyeAndClosesConnection) {
