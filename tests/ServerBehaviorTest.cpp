@@ -45,6 +45,17 @@ protected:
         return client;
     }
 
+    // Removal from the user list can lag behind what clients see, so ask /users until it matches
+    ::testing::AssertionResult waitForUserCount(TestClient& client, int count) {
+        std::string expected = "Connected users (" + std::to_string(count) + "):";
+        auto deadline = Clock::now() + 2s;
+        while (Clock::now() < deadline) {
+            client.send("/users");
+            if (client.waitFor(expected, 200ms)) return ::testing::AssertionSuccess();
+        }
+        return ::testing::AssertionFailure() << "/users never reported " << count << " user(s)";
+    }
+
     // The server writes the log after sending, so a client can see a message before it's logged
     ::testing::AssertionResult waitForLogLine(const std::string& expected) const {
         std::string content;
@@ -241,14 +252,7 @@ TEST_F(ServerBehaviorTest, DisconnectedUserIsRemovedFromUserList) {
     bob.reset();
     ASSERT_TRUE(alice->waitFor("*** Bob has left the chat ***"));
 
-    // The leave notice is sent just before the server removes the client, so allow a short delay
-    bool removed = false;
-    auto deadline = Clock::now() + 2s;
-    while (!removed && Clock::now() < deadline) {
-        alice->send("/users");
-        removed = alice->waitFor("Connected users (1):", 200ms);
-    }
-    EXPECT_TRUE(removed);
+    EXPECT_TRUE(waitForUserCount(*alice, 1));
 }
 
 TEST_F(ServerBehaviorTest, ClientLeavingBeforeUsernameIsRemovedFromUserList) {
@@ -259,13 +263,7 @@ TEST_F(ServerBehaviorTest, ClientLeavingBeforeUsernameIsRemovedFromUserList) {
 
     auto alice = connectAs("Alice");
 
-    bool removed = false;
-    auto deadline = Clock::now() + 2s;
-    while (!removed && Clock::now() < deadline) {
-        alice->send("/users");
-        removed = alice->waitFor("Connected users (1):", 200ms);
-    }
-    EXPECT_TRUE(removed);
+    EXPECT_TRUE(waitForUserCount(*alice, 1));
 }
 
 // ── Chat log ──
