@@ -18,7 +18,8 @@ public:
 
 private:
     void handleClient(SOCKET clientSocket);
-    // Asks for a username and announces the client; returns false if the client is gone
+    // Asks for a username and announces the client.
+    // Returns false if the client left or was rejected; the caller then drops the connection.
     bool login(SOCKET clientSocket, std::string& username);
     void disconnect(SOCKET clientSocket, const std::string& username);
 
