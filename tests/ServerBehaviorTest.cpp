@@ -177,6 +177,24 @@ TEST_F(ServerBehaviorTest, CommandsAreNotBroadcast) {
     EXPECT_FALSE(bob->waitFor("/help", 300ms));
 }
 
+TEST_F(ServerBehaviorTest, UnknownCommandReturnsError) {
+    auto alice = connectAs("Alice");
+
+    alice->send("/dance wildly");
+
+    EXPECT_TRUE(alice->waitFor("Unknown command: /dance. Type /help to see the available commands.\n"));
+}
+
+TEST_F(ServerBehaviorTest, UnknownCommandIsNotBroadcast) {
+    auto alice = connectAs("Alice");
+    auto bob = connectAs("Bob");
+
+    alice->send("/dance");
+
+    ASSERT_TRUE(alice->waitFor("Unknown command: /dance"));
+    EXPECT_FALSE(bob->waitFor("/dance", 300ms));
+}
+
 // ── Private messages ──
 
 TEST_F(ServerBehaviorTest, PrivateMessageReachesOnlyTarget) {

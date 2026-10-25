@@ -26,6 +26,8 @@ bool CommandHandler::handle(SOCKET socket, const std::string& username, const st
         return false;
     } else if (message.substr(0, 4) == "/msg") {
         sendPrivateMessage(socket, username, message);
+    } else if (message[0] == '/') {
+        rejectUnknownCommand(socket, message);
     } else {
         broadcastChat(socket, username, message);
     }
@@ -83,6 +85,11 @@ void CommandHandler::sendPrivateMessage(SOCKET socket, const std::string& userna
     sendText(socket, "[PM to " + target + "]: " + text);
     std::cout << "[PM] " << username << " -> " << target << ": " << text << "\n";
     logger_.log("[PM] " + username + " -> " + target + ": " + text);
+}
+
+void CommandHandler::rejectUnknownCommand(SOCKET socket, const std::string& message) {
+    std::string command = message.substr(0, message.find(' '));
+    sendText(socket, "Unknown command: " + command + ". Type /help to see the available commands.\n");
 }
 
 void CommandHandler::broadcastChat(SOCKET socket, const std::string& username, const std::string& message) {
