@@ -47,7 +47,11 @@ void Server::run() {
 
 void Server::handleClient(SOCKET clientSocket) {
     std::string username;
-    if (!login(clientSocket, username)) return;
+    if (!login(clientSocket, username)) {
+        registry_.remove(clientSocket);
+        closesocket(clientSocket);
+        return;
+    }
 
     // Ends when the connection drops or the client sends /quit
     std::string message;
@@ -64,11 +68,7 @@ void Server::handleClient(SOCKET clientSocket) {
 bool Server::login(SOCKET clientSocket, std::string& username) {
     sendText(clientSocket, "Enter your username: ");
 
-    if (!receiveText(clientSocket, username)) {
-        registry_.remove(clientSocket);
-        closesocket(clientSocket);
-        return false;
-    }
+    if (!receiveText(clientSocket, username)) return false;
 
     while (!username.empty() && (username.back() == '\n' || username.back() == '\r')) {
         username.pop_back();
@@ -77,8 +77,6 @@ bool Server::login(SOCKET clientSocket, std::string& username) {
     // A username starting with '/' would be confused with a command
     if (username.empty() || username[0] == '/') {
         sendText(clientSocket, "Error: invalid username. Username cannot start with '/'.\n");
-        registry_.remove(clientSocket);
-        closesocket(clientSocket);
         return false;
     }
 
